@@ -3,12 +3,12 @@
 #
 # Usage:
 #   bash deploy/scripts/deploy_to_server.sh verify
-#   bash deploy/scripts/deploy_to_server.sh commit -m "[AI] Korjaus X"
+#   bash deploy/scripts/deploy_to_server.sh commit -m "[AI] Fix X"
 #   bash deploy/scripts/deploy_to_server.sh push
 #   bash deploy/scripts/deploy_to_server.sh pull
 #   bash deploy/scripts/deploy_to_server.sh rebuild
 #   bash deploy/scripts/deploy_to_server.sh smoke
-#   bash deploy/scripts/deploy_to_server.sh all -m "[AI] Korjaus X"
+#   bash deploy/scripts/deploy_to_server.sh all -m "[AI] Fix X"
 #
 # Config: deploy/deploy.env (copy from deploy/deploy.env.example)
 
@@ -64,7 +64,7 @@ parse_args() {
         exit 0
         ;;
       *)
-        deploy_fail "Tuntematon argumentti: $1"
+        deploy_fail "Unknown argument: $1"
         usage
         exit 2
         ;;
@@ -80,7 +80,7 @@ stage_verify() {
 stage_commit() {
   deploy_require_git_repo
   if [[ -z "${COMMIT_MSG}" ]]; then
-    deploy_fail "commit vaatii -m \"viesti\""
+    deploy_fail "commit requires -m \"message\""
     exit 2
   fi
   deploy_info "Stage: commit"
@@ -91,7 +91,7 @@ stage_commit() {
   git add -A
   git reset HEAD -- .env deploy/deploy.env mcp_config.json 2>/dev/null || true
   if git diff --cached --quiet; then
-    deploy_warn "Ei staged-muutoksia — commit ohitetaan"
+    deploy_warn "No staged changes — skipping commit"
     return 0
   fi
   git commit -m "${COMMIT_MSG}"
@@ -122,11 +122,11 @@ REMOTE
 
 stage_rebuild() {
   if ! deploy_compose_file_exists; then
-    deploy_warn "Ei ${DEPLOY_DOCKER_COMPOSE} — rebuild ohitetaan"
+    deploy_warn "No ${DEPLOY_DOCKER_COMPOSE} — skipping rebuild"
     return 0
   fi
   if [[ -z "${DEPLOY_DOCKER_REBUILD_SERVICES// /}" ]]; then
-    deploy_warn "DEPLOY_DOCKER_REBUILD_SERVICES tyhjä — rebuild ohitetaan"
+    deploy_warn "DEPLOY_DOCKER_REBUILD_SERVICES empty — skipping rebuild"
     return 0
   fi
   deploy_info "Stage: rebuild ${DEPLOY_DOCKER_REBUILD_SERVICES}"
@@ -153,7 +153,7 @@ stage_all() {
   echo ""
   stage_verify
   if [[ "${SKIP_COMMIT}" == true ]]; then
-    deploy_warn "Commit ohitettu (--skip-commit)"
+    deploy_warn "Commit skipped (--skip-commit)"
   else
     stage_commit
   fi
@@ -161,7 +161,7 @@ stage_all() {
   stage_pull
   stage_rebuild
   stage_smoke
-  deploy_ok "Deploy pipeline valmis"
+  deploy_ok "Deploy pipeline complete"
 }
 
 parse_args "$@"
@@ -179,7 +179,7 @@ case "${STAGE}" in
     exit 2
     ;;
   *)
-    deploy_fail "Tuntematon stage: ${STAGE}"
+    deploy_fail "Unknown stage: ${STAGE}"
     usage
     exit 2
     ;;

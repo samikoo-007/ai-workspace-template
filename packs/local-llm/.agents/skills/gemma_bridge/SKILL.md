@@ -1,45 +1,54 @@
 ---
 name: gemma_bridge
-description: "Tämä taito mahdollistaa tehtävien delegoinnin paikalliselle Gemma 4 LLM:lle (Ollama). Käytä tätä AINA, kun käyttäjä mainitsee 'Gemma' tai 'Gemma4'."
+description: >-
+  Delegate tasks to a local Gemma 4 LLM via Ollama.
+  Always use when the user mentions "Gemma" or "Gemma4".
 ---
 
-# Skill: Gemma Bridge (Paikallisen LLM:n delegaatio)
+# Skill: Gemma Bridge (local LLM delegation)
 
-Tämä taito mahdollistaa tehtävien delegoinnin lokaalille Ollama-palvelimelle (esim. Gemma 4 -mallille).
+Delegate work to a local Ollama server (e.g. a Gemma 4 model).
 
-## ⚠️ Milloin tätä taitoa tulee käyttää (Triggerit)?
-Käytä tätä taitoa ja siihen liittyvää Python-skriptiä **välittömästi**, kun:
-1. Käyttäjä mainitsee pyynnössään sanan **"Gemma"** tai **"Gemma4"** (tämä on eksplisiittinen pyyntö käyttää paikallista mallia).
-2. Tehtävänä on **massadata-analyysi**: Kymmenien tai satojen kilotavujen analysointi, joka ylittäisi pääagentin oman token-rajan tai konteksti-ikkunan.
-3. Tehtävänä on **tietosuojaa** vaativa tehtävä: Asiakirjat tai data, jota ei haluta lähettää pilveen analysoitavaksi.
+## When to use (triggers)
 
-## Komento (Execution)
+Use this skill and its Python script **immediately** when:
 
-Taito suoritetaan `.agents/skills/gemma_bridge/gemma_delegate.py` -skriptin avulla. Skripti on suunniteltu agentin käyttöön ja se tukee useita älykkäitä ominaisuuksia.
+1. The user mentions **"Gemma"** or **"Gemma4"** (explicit request for the local model).
+2. The task is **bulk data analysis**: tens or hundreds of KB that would exceed the main agent’s token/context limit.
+3. The task needs **privacy**: documents or data that must not be sent to the cloud.
 
-### 1. Peruskäyttö (Lyhyet kehotteet)
+## Execution
+
+Run via `.agents/skills/gemma_bridge/gemma_delegate.py`. The script is built for agent use and supports several modes.
+
+### 1. Basic use (short prompts)
+
 ```bash
-python3 .agents/skills/gemma_bridge/gemma_delegate.py "Kehotteesi tähän"
+python3 .agents/skills/gemma_bridge/gemma_delegate.py "Your prompt here"
 ```
 
-### 2. Tiedostopohjainen syöte (Massadata - SUOSITELTU)
-Jos lähetät mallille paljon tekstiä (esim. tiedoston sisältö, pitkät logit, koodikanta), tallenna kehote ja data ensin väliaikaistiedostoon ja lue se sisään `--file` parametrilla. Tämä estää Bash-komennon pituusrajojen rikkoutumisen:
+### 2. File-based input (bulk data — recommended)
+
+For large text (file contents, long logs, codebases), write the prompt and data to a temp file and pass `--file`. This avoids shell command-length limits:
+
 ```bash
-# Luo ensin tiedosto (esim. prompt.txt), jossa on ohjeet + data
+# Create a file first (e.g. prompt.txt) with instructions + data
 python3 .agents/skills/gemma_bridge/gemma_delegate.py --file prompt.txt
 ```
 
-### 3. Rakenteellisen datan pakotus (JSON)
-Jos haluat, että lokaali malli palauttaa datan automaattisesti purettavassa muodossa, ohjeista kehote palauttamaan JSON ja käytä `--json` -lippua:
+### 3. Structured output (JSON)
+
+To force machine-readable output, instruct the model to return JSON and pass `--json`:
+
 ```bash
-python3 .agents/skills/gemma_bridge/gemma_delegate.py --json "Tee analyysi ja palauta vastaus yksinomaan validina JSON-muotona..."
+python3 .agents/skills/gemma_bridge/gemma_delegate.py --json "Analyze and return the answer as valid JSON only..."
 ```
 
-*(Voit yhdistää komentoja: `python3 ... --json --file prompt.txt`)*
+*(You can combine flags: `python3 ... --json --file prompt.txt`)*
 
-## Konfiguraatio ja Kehotteiden Parhaat Käytännöt (Agentille ja Kehittäjälle)
+## Configuration and prompting tips
 
-- **API URL**: Oletuksena `http://localhost:11434/api/generate`.
-- **Malli**: Oletuksena `gemma4`.
-- **Ohjeistus (Prompting)**: Koska lokaalit mallit voivat olla rajallisempia, ole erittäin tarkka. Anna mallille selkeä rooli ja kerro sille tarkasti, missä muodossa haluat vastauksen (esim. *"Vastaa vain listana"*, *"Palauta tulos JSON-muodossa ilman mitään muuta tekstiä"*).
-- **Virhetilanteet**: Skriptissä on sisäänrakennettu timeout ja error handling. Jos skripti palauttaa verkkoyhteysvirheen, kommunikoi ihmiskäyttäjälle selkeästi, että "Paikalliseen Ollama-palvelimeen ei saatu yhteyttä tai se ei vastannut ajoissa. Varmistathan, että Ollama on käynnissä koneellasi".
+- **API URL**: default `http://localhost:11434/api/generate`.
+- **Model**: default `gemma4`.
+- **Prompting**: Local models are often weaker — be precise. Give a clear role and exact output format (e.g. *"Reply as a list only"*, *"Return JSON with no other text"*).
+- **Errors**: The script has timeout and error handling. On network failure, tell the user clearly: "Could not reach the local Ollama server in time. Confirm Ollama is running on this machine."

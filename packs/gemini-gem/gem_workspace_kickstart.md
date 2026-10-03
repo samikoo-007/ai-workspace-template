@@ -1,116 +1,117 @@
-# Gemini Gem: projektin käynnistys ideasta (mallipohja-työtila)
+# Gemini Gem: project kickstart from an idea (template workspace)
 
-**Lähdekansio Gemille:** tämä julkinen mallipohja (tai sen Template-klooni). Älä käytä henkilökohtaista kehityskopiota Knowledge-tiedostojen lähteenä, ellei se ole juuri synkronoitu puhdasta pohjaa.
+**Source folder for the Gem:** this public template (or a Template clone). Do not use a personal development copy as Knowledge unless it is freshly synced from a clean base.
 
-Tämä ohje on tarkoitettu **Google Gemini Gems** -työkaluun. Gem muuttaa yhden lauseen idean → tarkentavat kysymykset → ehdotukset → valmiit sisällöt työtilan tiedostoihin (`agents.md`, `task_plan.md`, `directives/current_task.md`, jne.).
+This guide is for **Google Gemini Gems**. The Gem turns a one-sentence idea → clarifying questions → proposals → ready content for workspace files (`AGENTS.md`, `task_plan.md`, `directives/current_task.md`, etc.).
 
-## Projektin nimi vs mallipohja (älä sekoita)
+## Project name vs template (do not confuse)
 
-| Termi | Mitä tarkoittaa |
-|-------|------------------|
-| **Mallipohja** | Työtilan rakenne ja säännöt (tämä repo ennen kopioita). Ei ole käyttäjän projektin nimi. |
-| **Projekti** | Käyttäjän oma kohde — oma nimi ja visio. |
-| **Kansion nimi** | Voit nimetä kopion `workspace-[lyhyt-nimi]` (esim. `workspace-turnaus`). Tämä on polku, ei automaattisesti projektin brändinimi. |
-| **Älä käytä projektin nimenä** | Mallipohjan repo-nimeä (esim. `ai-workspace-template`) — paitsi jos käyttäjä nimeää projektin näin erikseen. |
+| Term | Meaning |
+|------|---------|
+| **Template** | Workspace structure and rules (this repo before copy). Not the user’s project name. |
+| **Project** | The user’s own target — their name and vision. |
+| **Folder name** | You may name a copy `workspace-[short-name]` (e.g. `workspace-tournament`). That is a path, not automatically the project brand name. |
+| **Do not use as the project name** | The template repo name (e.g. `ai-workspace-template`) — unless the user explicitly chooses that. |
 
-Gem kysyy **projektin nimen** (Vaihe B) ja käyttää sitä kaikissa generoiduissa tiedostoissa.
+The Gem asks for the **project name** (Phase B) and uses it in all generated files.
 
-**Projektityypit:** Sovellus (UI/web), **Data & automaatio** (esim. Excel `data/`-kansiossa → CSV/JSON, Python-skriptit), tai Hybridi. Gem ei lue paikallisia tiedostoja — se suunnittelee; agentti toteuttaa.
-
----
-
-## 1. Mitä Gemini Gem tarvitsee toimiakseen erinomaisesti
-
-Gem ei “arvaa” työtilan sääntöjä — se tarvitsee **selkeän roolin, vaiheistetun työnkulun ja tiukan tulostemuodon**. Tutkimuksen ja käytännön perusteella nämä elementit nostavat laatua eniten:
-
-| Elementti | Miksi tärkeä |
-|-----------|----------------|
-| **Rooli (Role)** | Kuka Gem on (projektin käynnistyssuunnittelija mallipohjan rakenteen mukaan). |
-| **Tavoite (Goal)** | Yksi selkeä lopputulos: “tuota kopioitavat tiedostosisällöt, älä koodaa vielä”. |
-| **Syöte (Input)** | Mitä käyttäjä antaa: vain idea 1–3 lauseena. |
-| **Työnkulku (Workflow)** | Vaiheet järjestyksessä: tarkenna → ehdota → vahvista → tulosta. |
-| **Tulostemuoto (Output)** | Tiedosto kerrallaan, markdown-koodilohkoina, otsikolla `FILE: polku`. |
-| **Rajoitteet (Constraints)** | Ei salaisuuksia, ei keksittyjä API-avaimia, yksi kysymys kerrallaan. |
-| **1–2 few-shot -esimerkkiä** | Näyttää oikean keskustelun ja oikean tulosteen muodon. |
-| **Knowledge-tiedostot** | Lataa Gemiin: `agents.md`, `directives/prompt_template.md`, `BEFORE_YOU_START.md` (tai tämä doc). |
-| **Testisyötteet** | Tallenna 3–5 omaa projekti-ideaasi (eri toimialoja) ja testaa uudelleen ohjeen muutosten jälkeen. |
-
-**Älä tee näin:** yksi pitkä “ole hyvä ja auta” -teksti ilman vaiheita; useita kysymyksiä kerralla; sekava `task.md` vs `task_plan.md`; oikeita salaisuuksia `.env`-esimerkkeihin.
+**Project types:** App (UI/web), **Data & automation** (e.g. Excel under `data/` → CSV/JSON, Python scripts), or Hybrid. The Gem does not read local files — it plans; the coding agent implements.
 
 ---
 
-## 2. Mitä Gemin tulee kerätä käyttäjältä (tarkentavat kysymykset)
+## 1. What a Gemini Gem needs to work well
 
-Ennen tiedostojen generointia Gem varmistaa vähintään nämä (kysy **1–2 kysymystä per viesti**):
+The Gem does not “guess” workspace rules — it needs a **clear role, staged workflow, and strict output format**. These elements improve quality most:
 
-0. **Projektin nimi** — lyhyt nimi dokumentteihin (ei mallipohjan repo-nimeä).
-1. **Kohdekäyttäjät** — käyttäjän kuvaamat roolit (ei valmiita oletuksia ohjeista).
-2. **Käyttötilanne** — laite, paikka, offline-tarve käyttäjän sanoin.
-3. **MVP-laajuus** — 3–5 pakollista ominaisuutta käyttäjän tavoitteiden mukaan.
-4. **Datan ydin** — käyttäjän kuvaamat entiteetit ja tallennustapa.
-5. **Totuudenlähde** — tallennus (JSON-tiedosto, SQLite, pilvi-API)?
-6. **Teknologiatoive** — web (HTML/JS), Python-automaatio, React tms.?
-7. **Julkaisu** — vain paikallinen, Vercel-web, Docker-backend?
-8. **Kieli ja saavutettavuus** — UI-kieli, WCAG-tarve?
-9. **Tietosuoja** — henkilötiedot, GDPR, vain paikallinen käsittely (Gemma)?
+| Element | Why it matters |
+|---------|----------------|
+| **Role** | Who the Gem is (project kickstart planner for this template’s structure). |
+| **Goal** | One clear outcome: “produce copy-pasteable file contents; do not code yet”. |
+| **Input** | What the user provides: only a 1–3 sentence idea. |
+| **Workflow** | Ordered steps: clarify → propose → confirm → print. |
+| **Output format** | One file at a time, markdown code blocks, headed `FILE: path`. |
+| **Constraints** | No secrets, no invented API keys, one question at a time. |
+| **1–2 few-shot examples** | Show the right conversation and output shape. |
+| **Knowledge files** | Upload to the Gem: `AGENTS.md`, `directives/prompt_template.md`, `BEFORE_YOU_START.md` (or this doc). |
+| **Test inputs** | Keep 3–5 of your own project ideas (different domains) and retest after instruction changes. |
 
-Kun nämä ovat riittävän selvät, Gem tekee **lyhyen MVP-yhteenvedon** ja pyytää vahvistuksen ennen tiedostojen tulostusta.
-
----
-
-## 3. Gemin tuottamat tiedostot (mallipohjan rakenne)
-
-| Tiedosto | Rooli |
-|----------|--------|
-| `agents.md` | **Tämän projektin** perustuslaki (käyttäjän projektin nimi visiossa): pino, data, skillit, muististrategia. |
-| `task_plan.md` | Korkean tason roadmap (virstanpylväät, ei päivittäisiä mikrotehtäviä). |
-| `directives/current_task.md` | **Yksi** ensimmäinen konkreettinen tehtävä agentille. |
-| `data/schema.json` | JSON-skeema (Data-First) — jos projekti on datalähtöinen. |
-| `docs/parking_lot.md` | Lisäykset, jotka eivät kuulu MVP:hen (valinnainen päivitys). |
-| `.env.example` | **Vain muuttujanimet ja kommentit** — ei oikeita arvoja. |
-
-**Ei tuoteta:** `progress.md` / `findings.md` (agentti täyttää itse). **Ei sekoiteta:** the agent's sisäistä `task.md` (brain) vs `task_plan.md` (repo).
+**Avoid:** one long “please help” blob with no stages; many questions at once; confusing `task.md` vs `task_plan.md`; real secrets in `.env` examples.
 
 ---
 
-## 4. Asennus Gemiin (käyttäjälle)
+## 2. What the Gem should gather (clarifying questions)
 
-**Seikkaperäinen ohje:** [gem_asennusohje.md](gem_asennusohje.md) (mitä tallennetaan Gemiin vs paikalliseen työtilaan).
+Before generating files, the Gem confirms at least these (**1–2 questions per message**):
 
-**Pikayhteenveto:**
+0. **Project name** — short name for documents (not the template repo name).
+1. **Target users** — roles in the user’s words (no preset assumptions).
+2. **Usage context** — device, place, offline need in the user’s words.
+3. **MVP scope** — 3–5 must-have features from the user’s goals.
+4. **Data core** — entities and storage as the user describes them.
+5. **Source of truth** — storage (JSON file, SQLite, cloud API)?
+6. **Tech preference** — web (HTML/JS), Python automation, React, etc.?
+7. **Publish path** — local only, Vercel web, Docker backend?
+8. **Language and a11y** — UI language, WCAG need?
+9. **Privacy** — personal data, GDPR, local-only processing (Gemma)?
 
-1. **Gemini → Gems → Luo uusi Gem**
-2. **Nimi:** esim. `Projektikäynnistys (mallipohja)` (ei mallipohjan repo-nimeä)
-3. **Instructions:** kopioi koko [`gem_custom_instructions_paste.txt`](gem_custom_instructions_paste.txt)
-4. **Knowledge:** lataa `agents.md`, `directives/prompt_template.md`, `BEFORE_YOU_START.md` (valinn. `docs/gem_workspace_kickstart.md`)
-5. **Älä lataa:** `.env`, `data/*.xlsx`, salaisuuksia
-6. **Save** → testaa Preview-idealla
-7. Gemin tulosteet → kopioi **uuden** `workspace-[projekti]/` -kansion tiedostoihin
+When these are clear enough, the Gem writes a **short MVP summary** and asks for confirmation before printing files.
 
 ---
 
-## 5. Käyttö käyttäjän näkökulmasta
+## 3. Files the Gem produces (template structure)
+
+| File | Role |
+|------|------|
+| `AGENTS.md` | **This project’s** constitution (user’s project name in the vision): stack, data, skills, memory strategy. |
+| `task_plan.md` | High-level roadmap (milestones, not daily micro-tasks). |
+| `directives/current_task.md` | **One** first concrete task for the agent. |
+| `data/schema.json` | JSON schema (data-first) — if the project is data-led. |
+| `docs/parking_lot.md` | Extras that are out of MVP (optional update). |
+| `.env.example` | **Variable names and comments only** — no real values. |
+
+**Do not produce:** `progress.md` / `findings.md` (the agent fills these). **Do not confuse:** the agent’s internal `task.md` (brain) vs `task_plan.md` (repo).
+
+---
+
+## 4. Install into a Gem (for the user)
+
+**Detailed guide:** [gem_install_guide.md](gem_install_guide.md) (what goes in the Gem vs the local workspace).
+
+**Quick summary:**
+
+1. **Gemini → Gems → Create new Gem**
+2. **Name:** e.g. `Project kickstart (template)` (not the template repo name)
+3. **Instructions:** paste all of [`gem_custom_instructions_paste.txt`](gem_custom_instructions_paste.txt)
+4. **Knowledge:** upload `AGENTS.md`, `directives/prompt_template.md`, `BEFORE_YOU_START.md` (optional: this kickstart doc)
+5. **Do not upload:** `.env`, `data/*.xlsx`, secrets
+6. **Save** → test with a Preview idea
+7. Gem outputs → copy into a **new** `workspace-[project]/` folder’s files
+
+---
+
+## 5. Usage from the user’s view
 
 ```
-Sinä: [oma projekti-ideas, 1–3 lausetta]
-Gem: [1–2 tarkentavaa kysymystä]
-Sinä: [vastaukset]
-Gem: [ehdotukset MVP + parking lot -lisäykset]
-Sinä: Hyväksy / muokkaa
-Gem: [koodilohkot: agents.md, task_plan.md, current_task.md, ...]
-Sinä: Kopioi sisällöt työtilaan → anna the agent: "Lue agents.md ja directives/current_task.md, aloita."
+You: [your project idea, 1–3 sentences]
+Gem: [1–2 clarifying questions]
+You: [answers]
+Gem: [MVP proposal + parking-lot extras]
+You: Accept / edit
+Gem: [code blocks: AGENTS.md, task_plan.md, current_task.md, ...]
+You: Copy contents into the workspace → tell your coding agent:
+     "Read AGENTS.md and directives/current_task.md, start."
 ```
 
 ---
 
-## 6. Token-säästö in the agent (Gem → agentti)
+## 6. Token savings for the coding agent (Gem → agent)
 
-Gem tekee **suunnittelun**; your AI coding agent (e.g. Cursor) tekee **toteutuksen**. Ohjeista käyttäjää:
+The Gem does **planning**; your AI coding agent (e.g. Cursor) does **implementation**. Guide the user to:
 
-- Viittaamaan tiedostoihin `@agents.md` ja `@directives/current_task.md`.
-- Yksi tehtävä kerrallaan `current_task.md`:ssä.
-- Massadata / arkaluonteinen → paikallinen Gemma (`gemma_bridge`).
+- Reference files with `@AGENTS.md` and `@directives/current_task.md`.
+- Keep one task at a time in `current_task.md`.
+- Bulk / sensitive data → local Gemma (`gemma_bridge`).
 
 ---
 
-*Päivitetty: mallipohja-työtilan Gem-ohje.*
+*Updated: Gem guide for the AI Workspace Template.*

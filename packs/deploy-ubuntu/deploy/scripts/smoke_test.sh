@@ -62,7 +62,7 @@ if [[ -f "\${COMPOSE}" ]]; then
   docker compose --env-file "\${ENV_FILE}" -f "\${COMPOSE}" config >/dev/null
   echo "✅ docker compose config OK"
 else
-  echo "⚠️  Ei \${COMPOSE} — ohitetaan docker-smoke"
+  echo "⚠️  No \${COMPOSE} — skipping docker smoke"
 fi
 
 if [[ -n "\${SMOKE_JOBS}" && -f "\${CRON_RUNNER}" ]]; then
@@ -95,7 +95,7 @@ case "${MODE}" in
     smoke_remote
     ;;
   *)
-    deploy_fail "Tuntematon mode: ${MODE} (local|remote|all)"
+    deploy_fail "Unknown mode: ${MODE} (local|remote|all)"
     exit 2
     ;;
 esac
