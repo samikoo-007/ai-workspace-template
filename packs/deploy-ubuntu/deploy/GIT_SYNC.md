@@ -1,70 +1,71 @@
 # Git sync — Mac ↔ Ubuntu Server (SSH bare repo)
 
-Tuotantorepo synkronoidaan **SSH bare-repon** kautta. GitHub ei ole pakollinen.
+The production repo syncs over an **SSH bare repo**. GitHub is optional.
 
-| Rooli | Polku (oletus) |
-|-------|----------------|
+| Role | Path (default) |
+|------|----------------|
 | Bare repo (`origin`) | `/srv/<project>/git/<project>.git` |
-| Mac kehitys | Google Drive / paikallinen työtila |
+| Mac development | Local workspace |
 | Server checkout | `/srv/<project>/app` |
 
-Konfiguroi polut: `deploy/deploy.env` (kopioi `deploy/deploy.env.example`).
+Configure paths in `deploy/deploy.env` (copy from `deploy/deploy.env.example`).
 
-## Ensiasennus (kerran per projekti)
+## First-time setup (once per project)
 
 ```bash
 cp deploy/deploy.env.example deploy/deploy.env
-# Muokkaa DEPLOY_* -arvot
+# Edit DEPLOY_* values
 
 bash deploy/scripts/setup_git_remote.sh --push
 ```
 
-Tämä:
-1. Luo bare-repon serverille
-2. Asettaa Macin `origin` → `your-server:/srv/.../git/....git`
-3. Linkittää serverin app-checkoutin bare-repoon
-4. `--push`: pushaa haaran ja fast-forward pull serverille
+This will:
 
-## Päivittäinen työnkulku (agentti tai ihminen)
+1. Create the bare repo on the server
+2. Point Mac `origin` → `your-server:/srv/.../git/....git`
+3. Link the server app checkout to the bare repo
+4. `--push`: push the branch and fast-forward pull on the server
 
-**Täysi putki (suositus korjauksen jälkeen):**
+## Daily workflow (agent or human)
+
+**Full pipeline (recommended after a fix):**
 
 ```bash
 bash deploy/scripts/deploy_to_server.sh all -m "[AI] Fix worker-sync TypeError"
 ```
 
-Vaiheet erikseen:
+Steps separately:
 
 ```bash
-bash deploy/scripts/deploy_to_server.sh verify          # security + testit
+bash deploy/scripts/deploy_to_server.sh verify          # security + tests
 bash deploy/scripts/deploy_to_server.sh commit -m "..." # git commit
 bash deploy/scripts/deploy_to_server.sh push            # git push origin
 bash deploy/scripts/deploy_to_server.sh pull            # server ff-only merge
 bash deploy/scripts/deploy_to_server.sh rebuild         # docker compose build worker
-bash deploy/scripts/deploy_to_server.sh smoke           # cron smoke serverillä
+bash deploy/scripts/deploy_to_server.sh smoke           # cron smoke on server
 ```
 
-**Huom:** Worker-skriptit ovat Docker-imagessa — `rebuild` on pakollinen kun `scripts/` muuttuu (kuten your-project).
+**Note:** Worker scripts live in the Docker image — `rebuild` is required when `scripts/` changes (as with `your-project`).
 
-## Ympäristömuuttujat (`deploy/deploy.env`)
+## Environment variables (`deploy/deploy.env`)
 
-| Muuttuja | Kuvaus |
-|----------|--------|
-| `DEPLOY_SERVER_HOST` | SSH-alias (esim. `your-server`) |
-| `DEPLOY_GIT_BARE` | Bare repo serverillä |
-| `DEPLOY_APP_DIR` | Tuotantokoodi `/srv/.../app` |
-| `DEPLOY_BRANCH` | Deployattava haara |
-| `DEPLOY_DOCKER_REBUILD_SERVICES` | Esim. `worker` tai `worker api web` |
-| `DEPLOY_SMOKE_CRON_JOBS` | Esim. `worker-sync report-job` |
+| Variable | Description |
+|----------|-------------|
+| `DEPLOY_SERVER_HOST` | SSH alias (e.g. `your-server`) |
+| `DEPLOY_GIT_BARE` | Bare repo on the server |
+| `DEPLOY_APP_DIR` | Production code `/srv/.../app` |
+| `DEPLOY_BRANCH` | Branch to deploy |
+| `DEPLOY_DOCKER_REBUILD_SERVICES` | e.g. `worker` or `worker api web` |
+| `DEPLOY_SMOKE_CRON_JOBS` | e.g. `worker-sync report-job` |
 
-## Turvallisuus
+## Security
 
-- `deploy/deploy.env` **ei** versionhallintaan (projektikohtaiset polut)
-- `.env` **ei** gitissä — vain serverin `/srv/.../app/.env` (`chmod 600`)
-- Mac-kehityksessä pidä kirjoitusportit `.env`:ssä `0`
-- Tuotannon portit: projektin `deploy/env.production.*` + cron `-e`-ylikirjoitukset
+- `deploy/deploy.env` is **not** in version control (project-specific paths)
+- `.env` is **not** in git — only on the server at `/srv/.../app/.env` (`chmod 600`)
+- On Mac development, keep write ports in `.env` set to `0`
+- Production ports: project `deploy/env.production.*` + cron `-e` overrides
 
-## your-project -referenssi
+## your-project reference
 
 ```bash
 DEPLOY_PROJECT_NAME=your-project
@@ -74,4 +75,4 @@ DEPLOY_DOCKER_REBUILD_SERVICES=worker
 DEPLOY_SMOKE_CRON_JOBS=worker-sync
 ```
 
-Katso myös: `your-project/deploy/GIT_SYNC.md`
+See also: `your-project/deploy/GIT_SYNC.md`

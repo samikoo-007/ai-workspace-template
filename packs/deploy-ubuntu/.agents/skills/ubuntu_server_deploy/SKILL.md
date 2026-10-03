@@ -1,57 +1,57 @@
 ---
 name: ubuntu_server_deploy
 description: >-
-  Ubuntu LAN -palvelimen commit → git push → deploy → smoke -putki.
-  Käytä kun käyttäjä pyytää commitoida, pushata, deployata serverille,
-  ajaa smoke-testin, korjata tuotantocronin tai toistaa your-project-tyylinen
-  julkaisuprosessi. Konfiguroi deploy/deploy.env ennen ensimmäistä ajoa.
+  Ubuntu LAN server pipeline: commit → git push → deploy → smoke.
+  Use when the user asks to commit, push, deploy to the server, run a smoke
+  test, fix production cron, or repeat a your-project-style release flow.
+  Configure deploy/deploy.env before the first run.
 ---
-# Ubuntu Server Deploy 🚀
+# Ubuntu Server Deploy
 
-Täydellinen julkaisuputki Mac-kehityksestä Ubuntu LAN -tuotantoon (`your-server`-tyyli).
+Full release pipeline from Mac development to Ubuntu LAN production (`your-server` style).
 
-## Milloin käyttää
+## When to use
 
-- Käyttäjä: "commit + deploy", "push serverille", "smoke test", "korjaa tuotannossa"
-- Cron / worker-korjauksen jälkeen
-- **Älä** käytä Vercel-only frontend -projekteihin → `deployment/SKILL.md`
+- User: "commit + deploy", "push to server", "smoke test", "fix in production"
+- After a cron / worker fix
+- **Do not** use for Vercel-only frontends → `deployment/SKILL.md`
 
-## Esivalmistelut (kerran per projekti)
+## Prerequisites (once per project)
 
-1. `cp deploy/deploy.env.example deploy/deploy.env` — täytä `DEPLOY_*`
+1. `cp deploy/deploy.env.example deploy/deploy.env` — fill in `DEPLOY_*`
 2. `bash deploy/scripts/setup_git_remote.sh --push`
-3. Serverillä: app checkout, `.env`, cron (projektin docs)
-4. Valinnainen: `cp deploy/smoke_remote.example.sh deploy/smoke_remote.sh`
+3. On the server: app checkout, `.env`, cron (project docs)
+4. Optional: `cp deploy/smoke_remote.example.sh deploy/smoke_remote.sh`
 
-## Agentin työnkulku (pakollinen järjestys)
+## Agent workflow (required order)
 
-### 1. Verify (aina ensin)
+### 1. Verify (always first)
 
 ```bash
 bash deploy/scripts/deploy_to_server.sh verify
 ```
 
-Epäonnistuu → korjaa koodi/testit, **älä deployaa**.
+On failure → fix code/tests, **do not deploy**.
 
-### 2. Commit (käyttäjän pyynnöstä tai post-task)
+### 2. Commit (when the user asks, or post-task if policy allows)
 
 ```bash
-python3 scripts/security_scan.py --all   # jos ei juuri ajettu verifyssä
-bash deploy/scripts/deploy_to_server.sh commit -m "[AI] <mitä tehtiin>"
+python3 scripts/security_scan.py --all   # if not just run in verify
+bash deploy/scripts/deploy_to_server.sh commit -m "[AI] <what changed>"
 ```
 
-- **Älä committaa** `.env`, `deploy/deploy.env`, `mcp_config.json`
-- Commit vain kun testit + security_scan PASS
+- **Never commit** `.env`, `deploy/deploy.env`, `mcp_config.json`
+- Commit only when tests + security_scan PASS
 
 ### 3. Push + pull + rebuild + smoke
 
-**Yksi komento:**
+**One command:**
 
 ```bash
-bash deploy/scripts/deploy_to_server.sh all -m "[AI] <mitä tehtiin>"
+bash deploy/scripts/deploy_to_server.sh all -m "[AI] <what changed>"
 ```
 
-**Tai erikseen** (debug):
+**Or separately** (debug):
 
 ```bash
 bash deploy/scripts/deploy_to_server.sh push
@@ -60,25 +60,26 @@ bash deploy/scripts/deploy_to_server.sh rebuild
 bash deploy/scripts/deploy_to_server.sh smoke
 ```
 
-### 4. Tulosten raportointi
+### 4. Report results
 
-Ilmoita käyttäjälle:
-- Git commit hash (jos commit)
-- Server: `git log -1` tulos pull-vaiheesta
-- Smoke: cron-job status (`status=ok` / virhe)
-- Seuraava cron-aika (jos relevantti)
+Tell the user:
 
-## Kriittiset säännöt
+- Git commit hash (if committed)
+- Server: `git log -1` after pull
+- Smoke: cron-job status (`status=ok` / error)
+- Next cron time (if relevant)
 
-| Sääntö | Miksi |
-|--------|-------|
-| **`rebuild` workerin jälkeen** kun `scripts/` muuttuu | Skriptit ovat Docker-imagessa, ei bind-mount |
-| **`deploy/deploy.env` ei gitissä** | Projektikohtaiset polut |
-| **Mac `.env` kirjoitusportit = 0** | Fail-Safe |
-| **Tuotanto-smoke ilman live-kirjoituksia** kun mahdollista | Dry-run cron tai read-only job ensin |
-| **Push vain verify+commit jälkeen** | Ei rikkinäistä koodia serverille |
+## Critical rules
 
-## Smoke-testin konfigurointi
+| Rule | Why |
+|------|-----|
+| **`rebuild` after worker** when `scripts/` changes | Scripts are in the Docker image, not bind-mounted |
+| **`deploy/deploy.env` not in git** | Project-specific paths |
+| **Mac `.env` write ports = 0** | Fail-safe |
+| **Production smoke without live writes** when possible | Dry-run cron or read-only job first |
+| **Push only after verify+commit** | No broken code on the server |
+
+## Smoke test configuration
 
 `deploy/deploy.env`:
 
@@ -87,15 +88,15 @@ DEPLOY_SMOKE_CRON_JOBS=worker-sync
 DEPLOY_DOCKER_REBUILD_SERVICES=worker
 ```
 
-Live-kirjoitus cron vaatii saman `-e`-ympäristön kuin crontab (projektin docs).
+Live-write cron needs the same `-e` environment as crontab (project docs).
 
-Read-only smoke ensin:
+Read-only smoke first:
 
 ```bash
 ssh your-server 'cd /srv/.../app && docker compose ... run --rm worker python scripts/cron_runner.py --job report-job'
 ```
 
-## your-project -esimerkki
+## your-project example
 
 ```bash
 # deploy/deploy.env
@@ -110,23 +111,23 @@ DEPLOY_SMOKE_CRON_JOBS=report-job
 bash deploy/scripts/deploy_to_server.sh all -m "[AI] Fix report-job TypeError"
 ```
 
-## Virhetilanteet
+## Troubleshooting
 
-| Ongelma | Toimenpide |
-|---------|------------|
-| `Permission denied (publickey)` | SSH-avaimet / `your-server` alias |
-| `merge --ff-only` fail | Rebase Macilla tai serverillä manuaalinen merge |
-| Smoke fail rebuildin jälkeen | Aja job manuaalisesti containerissa, lue traceback |
-| `already_sent` ntfy | Cron jo ilmoitti — tarkista `cron_job_status.json` |
+| Problem | Action |
+|---------|--------|
+| `Permission denied (publickey)` | SSH keys / `your-server` alias |
+| `merge --ff-only` fail | Rebase on Mac or merge manually on server |
+| Smoke fails after rebuild | Run the job manually in the container; read traceback |
+| `already_sent` ntfy | Cron already notified — check `cron_job_status.json` |
 
-## Liittyvät skillit
+## Related skills
 
-- `git_checkpoint` — commit/rollback ennen deploya
-- `deployment` — Vercel/Docker scaffold uusille projekteille
-- `security_guard` — salaisuudet
+- `git_checkpoint` — commit/rollback before deploy
+- `deployment` — Vercel/Docker scaffold for new projects
+- `security_guard` — secrets
 
-## Lähteet
+## Sources
 
 - `deploy/README.md`
 - `deploy/GIT_SYNC.md`
-- `your-project/deploy/GIT_SYNC.md` (referenssitoteutus)
+- `your-project/deploy/GIT_SYNC.md` (reference implementation)

@@ -1,67 +1,67 @@
 # Ubuntu Server — commit → git → deploy → smoke
 
-Tämä kansio on **tuotantoputki** projekteille, jotka ajetaan 24/7 Ubuntu LAN -palvelimella (kuten `your-project`).
+This folder is a **production pipeline** for projects that run 24/7 on an Ubuntu LAN server (e.g. `your-project`).
 
-Mac / Google Drive -työtila = kehitys. Tuotanto = serverin `/srv/<project>/`.
+Local Mac workspace = development. Production = server `/srv/<project>/`.
 
-## Pika-aloitus
+## Quick start
 
 ```bash
-# 1. Konfiguroi (kerran)
+# 1. Configure (once)
 cp deploy/deploy.env.example deploy/deploy.env
-# Muokkaa DEPLOY_* -polut ja smoke-jobit
+# Edit DEPLOY_* paths and smoke jobs
 
-# 2. Git remote (kerran)
+# 2. Git remote (once)
 bash deploy/scripts/setup_git_remote.sh --push
 
-# 3. Jokainen deploy
-bash deploy/scripts/deploy_to_server.sh all -m "[AI] Kuvaus muutoksesta"
+# 3. Every deploy
+bash deploy/scripts/deploy_to_server.sh all -m "[AI] Describe the change"
 ```
 
-## Putken vaiheet
+## Pipeline stages
 
-| Vaihe | Komento | Mitä tapahtuu |
-|-------|---------|---------------|
+| Stage | Command | What it does |
+|-------|---------|--------------|
 | **Verify** | `deploy_to_server.sh verify` | `security_scan` + `health_check` + pytest |
-| **Commit** | `... commit -m "..."` | Git commit (ei `.env` / salaisuuksia) |
+| **Commit** | `... commit -m "..."` | Git commit (no `.env` / secrets) |
 | **Push** | `... push` | `git push origin $BRANCH` |
 | **Pull** | `... pull` | Server: `git fetch && merge --ff-only` |
-| **Rebuild** | `... rebuild` | `docker compose build worker` (skriptit imagessa!) |
-| **Smoke** | `... smoke` | Cron-jobit + `deploy/smoke_remote.sh` |
+| **Rebuild** | `... rebuild` | `docker compose build worker` (scripts live in the image!) |
+| **Smoke** | `... smoke` | Cron jobs + `deploy/smoke_remote.sh` |
 
-## npm-skriptit
+## npm scripts
 
 ```bash
 npm run deploy:verify
 npm run deploy:smoke
-npm run deploy:all -- -m "[AI] viesti"
+npm run deploy:all -- -m "[AI] message"
 ```
 
-## Tiedostot
+## Files
 
-| Tiedosto | Rooli |
-|----------|-------|
-| `deploy.env.example` | Malli — kopioi → `deploy.env` |
-| `scripts/deploy_to_server.sh` | Pääorkestraattori |
-| `scripts/pre_deploy_check.sh` | Paikalliset tarkistukset |
-| `scripts/setup_git_remote.sh` | SSH bare repo -asennus |
+| File | Role |
+|------|------|
+| `deploy.env.example` | Template — copy → `deploy.env` |
+| `scripts/deploy_to_server.sh` | Main orchestrator |
+| `scripts/pre_deploy_check.sh` | Local checks |
+| `scripts/setup_git_remote.sh` | SSH bare-repo setup |
 | `scripts/smoke_test.sh` | Local / remote smoke |
-| `smoke_remote.example.sh` | Kopioi → `smoke_remote.sh` (projektikohtainen) |
-| `GIT_SYNC.md` | Git-työnkulku |
+| `smoke_remote.example.sh` | Copy → `smoke_remote.sh` (project-specific) |
+| `GIT_SYNC.md` | Git workflow |
 
-## Agentti
+## Agent
 
-Cursor-agentti: **`.agents/skills/ubuntu_server_deploy/SKILL.md`**
+Cursor agent skill: **`.agents/skills/ubuntu_server_deploy/SKILL.md`**
 
-Käytä kun käyttäjä pyytää: commit, deploy, push serverille, smoke-test, tuotantokorjaus.
+Use when the user asks for: commit, deploy, push to server, smoke test, production fix.
 
-## Vaatimukset serverillä
+## Server requirements
 
 - Ubuntu + Docker Compose
-- `deploy`-käyttäjä (tai projektin SSH-käyttäjä)
+- `deploy` user (or the project SSH user)
 - App checkout: `/srv/<project>/app` + `.env` (`chmod 600`)
-- Cron: `deploy/cron/*.crontab` (luo projektin mukaan — ei mukana tässä mallipohjassa)
+- Cron: `deploy/cron/*.crontab` (create per project — not shipped in this template)
 
-## Vercel / pilvi
+## Vercel / cloud
 
-Web-only projekteille käytä edelleen `.agents/skills/deployment/SKILL.md` (Vercel). Tämä `deploy/`-puu on **LAN-serveri + Docker worker** -mallille.
+For web-only projects, keep using `.agents/skills/deployment/SKILL.md` (Vercel). This `deploy/` tree is for the **LAN server + Docker worker** model.
