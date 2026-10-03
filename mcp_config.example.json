@@ -1,0 +1,10 @@
+{
+  "__README__": "Copy to mcp_config.json (gitignored). Do not put API keys here — use .env.",
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "disabled": true
+    }
+  }
+}

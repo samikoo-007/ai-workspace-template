@@ -1,0 +1,27 @@
+# Secrets & local config
+.env
+mcp_config.json
+deploy/deploy.env
+deploy/smoke_remote.sh
+
+# Temp & local data
+temp/
+data/
+!data/fixtures/
+!data/fixtures/**
+*.csv
+
+# Dependencies
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Runtime logs
+logs/runtime/*.log
+logs/runtime/**/*.log

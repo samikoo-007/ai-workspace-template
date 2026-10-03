@@ -1,0 +1,9 @@
+---
+description: Load the project constitution for every agent task
+alwaysApply: true
+---
+
+Read and follow `AGENTS.md` in the repo root.
+Use `directives/current_task.md` as the active human command.
+Never commit secrets. Run `python3 scripts/security_scan.py` before any git commit.
+Commit only when the user asks, unless the project documents an auto-commit opt-in.

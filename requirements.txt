@@ -1,0 +1,5 @@
+# Minimal core — add project deps as needed.
+# For scrapers/pandas, see packs/data-python/requirements.txt
+
+python-dotenv>=1.0.0
+pytest>=7.4.0
